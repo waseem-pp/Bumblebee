@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Voice Assistant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Waseem's Voice Assistant</h1>
+        <div class="output" id="output">Click the mic and speak your command...</div>
+        <button id="micBtn">🎤 Speak</button>
+    </div>
+
+    <script>
+        const micBtn = document.getElementById('micBtn');
+        const outputDiv = document.getElementById('output');
+
+        // Speech Recognition setup
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+
+        micBtn.onclick = () => {
+            recognition.start();
+        };
+
+        recognition.onresult = function(event) {
+            const userCommand = event.results[0][0].transcript;
+            outputDiv.innerHTML = `<b>You said:</b> ${userCommand}`;
+
+            // Send to Flask backend
+            fetch('/process', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ command: userCommand })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const reply = data.reply;
+                outputDiv.innerHTML += `<br><b>Assistant:</b> ${reply}`;
+
+                // Speak the reply
+                const speech = new SpeechSynthesisUtterance(reply);
+                speech.rate = 1;
+                speech.pitch = 1;
+                speechSynthesis.speak(speech);
+            });
+        };
+    </script>
+</body>
+</html>
